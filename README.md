@@ -10,6 +10,8 @@
 
 [Features](#features) • [Hardware](#hardware-requirements) • [Setup](#setup) • [Build](#build--flash) • [Architecture](#project-structure)
 
+![CalX Dashboard](https://raw.githubusercontent.com/Saijayaranjan/CalX-Frontend/main/public/images/Website.png)
+
 </div>
 
 ---
