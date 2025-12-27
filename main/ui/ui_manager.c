@@ -321,6 +321,34 @@ static void render_advanced_settings(void) {
   }
 }
 
+// =============================================================================
+// Icons (8x8 bitmaps)
+// =============================================================================
+
+static const uint8_t icon_internet[] = {0x00, 0x18, 0x3C, 0x66, 0xC3,
+                                        0x81, 0x00, 0x18}; // WiFi signalish
+
+static const uint8_t icon_ai[] = {0x18, 0x3C, 0x7E, 0xFF,
+                                  0xFF, 0x7E, 0x3C, 0x18}; // Brain/Sparkle
+
+static const uint8_t icon_keyboard[] = {0xFF, 0x81, 0xBD, 0xA5,
+                                        0xA5, 0xBD, 0x81, 0xFF}; // Keypad
+
+static const uint8_t icon_display[] = {0x18, 0x42, 0x81, 0x81,
+                                       0x81, 0x81, 0x42, 0x18}; // Screen/Eye
+
+static const uint8_t icon_power[] = {0x18, 0x3C, 0x3C, 0x3C,
+                                     0x3C, 0x3C, 0x3C, 0x18}; // Battery
+
+static const uint8_t icon_device[] = {0x3C, 0x42, 0x81, 0x99,
+                                      0x99, 0x81, 0x42, 0x3C}; // Chip
+
+static const uint8_t icon_update[] = {0x18, 0x3C, 0x7E, 0x18,
+                                      0x18, 0x18, 0x00, 0x7E}; // Download arrow
+
+static const uint8_t icon_advanced[] = {0x3C, 0x42, 0x99, 0xBD,
+                                        0xBD, 0x99, 0x42, 0x3C}; // Gear
+
 static void render_settings_screen(void) {
   display_driver_clear();
 
@@ -355,18 +383,35 @@ static void render_settings_screen(void) {
       break;
     }
   } else {
-    const char *items[] = {"1.Internet", "2.AI Config", "3.Keyboard",
-                           "4.Display",  "5.Power",     "6.Device",
-                           "7.Update",   "8.Advanced"};
+    // Modern Settings Menu
+    const char *items[] = {"Internet", "AI Config", "Keyboard", "Display",
+                           "Power",    "Device",    "Update",   "Advanced"};
 
-    // Show 4 items at a time
-    int start = (settings_selection / 4) * 4;
-    for (int i = 0; i < 4 && (start + i) < 8; i++) {
-      int y = i * 8;
-      display_driver_draw_text(0, y, items[start + i], TEXT_SIZE_SMALL);
+    const uint8_t *icons[] = {icon_internet, icon_ai,      icon_keyboard,
+                              icon_display,  icon_power,   icon_device,
+                              icon_update,   icon_advanced};
 
-      if ((start + i) == settings_selection) {
-        display_driver_invert_rect(0, y, 128, 8);
+    // Show 3 items at a time with icons (more spacing)
+    int items_per_page = 3;
+    int start = (settings_selection / items_per_page) * items_per_page;
+
+    // Status Bar separator
+    display_driver_draw_hline(0, 0, 128);
+
+    for (int i = 0; i < items_per_page && (start + i) < 8; i++) {
+      int item_idx = start + i;
+      int y_pos = 2 + (i * 10); // Spaced out list starting below status line
+
+      // Draw Icon
+      display_driver_draw_bitmap(2, y_pos, icons[item_idx], 8, 8);
+
+      // Draw Text
+      display_driver_draw_text(14, y_pos, items[item_idx], TEXT_SIZE_SMALL);
+
+      // Draw Selection Frame
+      if (item_idx == settings_selection) {
+        // Invert the whole row for selection
+        display_driver_invert_rect(0, y_pos - 1, 128, 10);
       }
     }
   }

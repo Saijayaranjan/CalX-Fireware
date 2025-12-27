@@ -76,6 +76,17 @@ void display_driver_fill_rect(int x, int y, int width, int height, bool on);
 void display_driver_invert_rect(int x, int y, int width, int height);
 
 /**
+ * Draw a bitmap image
+ * @param x X position
+ * @param y Y position
+ * @param bitmap Pointer to bitmap data (1 bit per pixel, row-major)
+ * @param w Width in pixels
+ * @param h Height in pixels
+ */
+void display_driver_draw_bitmap(int x, int y, const uint8_t *bitmap, int w,
+                                int h);
+
+/**
  * Turn display on/off (for power saving)
  */
 void display_driver_power(bool on);

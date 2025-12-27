@@ -430,3 +430,16 @@ int display_driver_get_line_height(calx_text_size_t size) {
 // =============================================================================
 
 const uint8_t *display_driver_get_buffer(void) { return display_buffer; }
+
+void display_driver_draw_bitmap(int x, int y, const uint8_t *bitmap, int w,
+                                int h) {
+  int byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
+
+  for (int j = 0; j < h; j++) {
+    for (int i = 0; i < w; i++) {
+      if (bitmap[j * byteWidth + i / 8] & (128 >> (i % 8))) {
+        display_driver_set_pixel(x + i, y + j, true);
+      }
+    }
+  }
+}
