@@ -127,13 +127,14 @@ static const char WEB_DISPLAY_HTML[] = R"rawliteral(
         let lastUpdate = Date.now();
         let frames = 0;
         
-        function press(key) {
-            fetch('/keypress', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({key: key})
-            });
-        }
+        // Note: Keypad input is disabled in view-only mode
+        // function press(key) {
+        //     fetch('/keypress', {
+        //         method: 'POST',
+        //         headers: {'Content-Type': 'application/json'},
+        //         body: JSON.stringify({key: key})
+        //     });
+        // }
         
         function updateDisplay() {
             fetch('/display/data')

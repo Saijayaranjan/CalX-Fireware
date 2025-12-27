@@ -83,10 +83,10 @@ static void render_not_bound_screen(void) {
 static void render_idle_screen(void) {
   display_driver_clear();
 
-  // Line 1: CalX
-  display_driver_draw_text(0, 4, "CalX", TEXT_SIZE_NORMAL);
+  // Line 1: CalX logo (centered)
+  display_driver_draw_text_centered(4, "CalX", TEXT_SIZE_LARGE);
 
-  // Line 2: ONLINE/OFFLINE + Battery + Notification dot
+  // Line 2-3: Status line (ONLINE/OFFLINE + Battery + Notification)
   char status[32];
   int battery = battery_manager_get_percent();
   bool online = wifi_manager_is_connected();
@@ -94,11 +94,11 @@ static void render_idle_screen(void) {
   snprintf(status, sizeof(status), "%s %d%%", online ? "ONLINE" : "OFFLINE",
            battery);
 
-  display_driver_draw_text(0, 16, status, TEXT_SIZE_NORMAL);
+  display_driver_draw_text_centered(22, status, TEXT_SIZE_SMALL);
 
-  // Notification dot
+  // Notification dot (right side)
   if (has_notification) {
-    display_driver_draw_text(120, 16, "*", TEXT_SIZE_NORMAL);
+    display_driver_draw_text(120, 22, "*", TEXT_SIZE_SMALL);
   }
 
   display_driver_update();
