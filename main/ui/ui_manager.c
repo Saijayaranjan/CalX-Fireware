@@ -34,6 +34,8 @@ static calx_state_t current_screen = STATE_BOOT;
 // Screen-specific state
 static int menu_selection = 0;
 static int settings_selection = 0;
+static bool in_settings_submenu = false; // Are we in a submenu?
+static int submenu_selection = 0;        // Which option in submenu
 static bool has_notification = false;
 
 // Content buffers
@@ -172,21 +174,200 @@ static void render_ai_screen(void) {
   display_driver_update();
 }
 
+static void render_display_settings(void) {
+  const char *items[] = {"Text Size", "Theme", "Contrast", "Timeout"};
+  const char *values[] = {"Normal", "Dark", "Med", "30s"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_power_settings(void) {
+  const char *items[] = {"Power Mode", "Battery", "Charging", "Sleep"};
+  const char *values[] = {"Normal", "85%", "No", "Auto"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_device_settings(void) {
+  const char *items[] = {"Name", "ID", "Bind Status", "Unbind"};
+  const char *values[] = {"CalX", "8857...", "Bound", "Select"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_internet_settings(void) {
+  const char *items[] = {"Status", "WiFi Setup", "Saved Network",
+                         "BLE Fallback"};
+  const char *values[] = {"Offline", "Scan...", "None", "Off"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_ai_config_settings(void) {
+  const char *items[] = {"Enabled", "Provider", "Model", "Length"};
+  const char *values[] = {"Yes", "OpenAI", "GPT-4o", "Normal"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_keyboard_settings(void) {
+  const char *items[] = {"Mode", "Key Repeat", "Long Press", "Shift"};
+  const char *values[] = {"T9", "Fast", "Med", "Toggle"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_update_settings(void) {
+  const char *items[] = {"Version", "Check Now", "Auto Update", "Channel"};
+  const char *values[] = {"v1.0.0", "Select", "On", "Stable"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
+static void render_advanced_settings(void) {
+  const char *items[] = {"Factory Reset", "Clear Cache", "Debug Info",
+                         "Reboot"};
+  const char *values[] = {"Select", "Select", "Select",
+                          "Select"}; // Placeholders
+
+  int start = (submenu_selection / 4) * 4;
+  for (int i = 0; i < 4 && (start + i) < 4; i++) {
+    int y = i * 8;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s: %s", items[start + i],
+             values[start + i]);
+    display_driver_draw_text(0, y, buffer, TEXT_SIZE_SMALL);
+
+    if ((start + i) == submenu_selection) {
+      display_driver_invert_rect(0, y, 128, 8);
+    }
+  }
+}
+
 static void render_settings_screen(void) {
   display_driver_clear();
 
-  const char *items[] = {"1.Internet", "2.AI Config", "3.Keyboard",
-                         "4.Display",  "5.Power",     "6.Device",
-                         "7.Update",   "8.Advanced"};
+  if (in_settings_submenu) {
+    switch (settings_selection) {
+    case 0:
+      render_internet_settings();
+      break;
+    case 1:
+      render_ai_config_settings();
+      break;
+    case 2:
+      render_keyboard_settings();
+      break;
+    case 3:
+      render_display_settings();
+      break;
+    case 4:
+      render_power_settings();
+      break;
+    case 5:
+      render_device_settings();
+      break;
+    case 6:
+      render_update_settings();
+      break;
+    case 7:
+      render_advanced_settings();
+      break;
+    default:
+      display_driver_draw_text_centered(4, "Error", TEXT_SIZE_SMALL);
+      break;
+    }
+  } else {
+    const char *items[] = {"1.Internet", "2.AI Config", "3.Keyboard",
+                           "4.Display",  "5.Power",     "6.Device",
+                           "7.Update",   "8.Advanced"};
 
-  // Show 4 items at a time
-  int start = (settings_selection / 4) * 4;
-  for (int i = 0; i < 4 && (start + i) < 8; i++) {
-    int y = i * 8;
-    display_driver_draw_text(0, y, items[start + i], TEXT_SIZE_SMALL);
+    // Show 4 items at a time
+    int start = (settings_selection / 4) * 4;
+    for (int i = 0; i < 4 && (start + i) < 8; i++) {
+      int y = i * 8;
+      display_driver_draw_text(0, y, items[start + i], TEXT_SIZE_SMALL);
 
-    if ((start + i) == settings_selection) {
-      display_driver_invert_rect(0, y, 128, 8);
+      if ((start + i) == settings_selection) {
+        display_driver_invert_rect(0, y, 128, 8);
+      }
     }
   }
 
@@ -459,6 +640,38 @@ void ui_manager_handle_ai_key(calx_key_t key) {
 }
 
 void ui_manager_handle_settings_key(calx_key_t key) {
+  if (in_settings_submenu) {
+    if (key == KEY_AC) {
+      in_settings_submenu = false;
+      needs_redraw = true;
+      return;
+    }
+
+    // Submenu navigation
+    switch (key) {
+    case KEY_UP:
+      if (submenu_selection > 0)
+        submenu_selection--;
+      needs_redraw = true;
+      break;
+    case KEY_DOWN:
+      if (submenu_selection < 3) // Default limit, will specialize per menu
+        submenu_selection++;
+      needs_redraw = true;
+      break;
+    case KEY_OK:
+    case KEY_EQUALS:
+      // TODO: Edit value
+      LOG_INFO("UI", "Edit setting: %d in menu %d", submenu_selection,
+               settings_selection);
+      break;
+    default:
+      break;
+    }
+    return;
+  }
+
+  // Main settings menu navigation
   switch (key) {
   case KEY_UP:
     if (settings_selection > 0)
@@ -466,13 +679,16 @@ void ui_manager_handle_settings_key(calx_key_t key) {
     needs_redraw = true;
     break;
   case KEY_DOWN:
-    if (settings_selection < 5)
+    if (settings_selection < 7) // 8 items (0-7)
       settings_selection++;
     needs_redraw = true;
     break;
   case KEY_OK:
   case KEY_EQUALS:
-    // Handle settings selection (would trigger sub-screens)
+    in_settings_submenu = true;
+    submenu_selection = 0;
+    needs_redraw = true;
+    LOG_INFO("UI", "Entering settings submenu: %d", settings_selection);
     break;
   case KEY_1:
   case KEY_2:
@@ -480,6 +696,8 @@ void ui_manager_handle_settings_key(calx_key_t key) {
   case KEY_4:
   case KEY_5:
   case KEY_6:
+  case KEY_7:
+  case KEY_8:
     settings_selection = key - KEY_1;
     needs_redraw = true;
     break;
