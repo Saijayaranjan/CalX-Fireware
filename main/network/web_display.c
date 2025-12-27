@@ -29,6 +29,7 @@ static const char WEB_DISPLAY_HTML[] = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CalX Display & Keypad</title>
     <style>
@@ -127,10 +128,12 @@ static const char WEB_DISPLAY_HTML[] = R"rawliteral(
         let lastUpdate = Date.now();
         let frames = 0;
         
-        // Keypad input disabled in view-only mode
         function press(key) {
-            // No-op: Web display is view-only
-            console.log('Keypad click disabled in view-only mode');
+            fetch('/keypress', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({key: key})
+            });
         }
         
         function updateDisplay() {
