@@ -1,0 +1,48 @@
+# CalX ESP32 Firmware - Main Component
+
+# Register all source files
+idf_component_register(
+    SRCS
+        "app_main.c"
+        "core/system_state.c"
+        "core/event_manager.c"
+        "core/logger.c"
+        "core/time_manager.c"
+        "drivers/display_driver.c"
+        "drivers/input_manager.c"
+        "drivers/battery_manager.c"
+        "drivers/power_manager.c"
+        "storage/storage_manager.c"
+        "storage/security_manager.c"
+        "network/wifi_manager.c"
+        "network/api_client.c"
+        "ui/ui_manager.c"
+        "ui/text_renderer.c"
+        "ota/ota_manager.c"
+    INCLUDE_DIRS
+        "."
+        "config"
+        "core"
+        "drivers"
+        "storage"
+        "network"
+        "ui"
+        "ota"
+        "captive_portal"
+    REQUIRES
+        nvs_flash
+        esp_wifi
+        esp_http_client
+        esp_https_ota
+        esp_event
+        driver
+        json
+        app_update
+        esp_timer
+        esp_netif
+        lwip
+        esp_http_server
+        esp_adc
+        mbedtls
+        esp-tls
+)
