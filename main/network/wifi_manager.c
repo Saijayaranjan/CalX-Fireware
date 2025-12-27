@@ -510,6 +510,14 @@ void wifi_manager_start_webserver(void) {
   config.uri_match_fn = httpd_uri_match_wildcard;
 
   if (httpd_start(&http_server, &config) == ESP_OK) {
+    // Keypress endpoint for web display
+    httpd_uri_t keypress = {
+        .uri = "/keypress",
+        .method = HTTP_POST,
+        .handler = keypress_handler,
+    };
+    httpd_register_uri_handler(http_server, &keypress);
+
     // Web display endpoint
     httpd_uri_t display = {
         .uri = "/display",
