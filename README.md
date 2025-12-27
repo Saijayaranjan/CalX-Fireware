@@ -216,6 +216,25 @@ CalX-Fireware/
 7. **Dashboard** → Enter code at [calxio.vercel.app](https://calxio.vercel.app/)
 8. **Ready** → Device shows idle screen with time
 
+## ✅ What Works Today
+
+- ESP-IDF build completes successfully
+- WiFi STA/AP modes with captive portal
+- SSD1306 OLED display driver
+- Matrix keypad input with debouncing
+- Battery ADC monitoring
+- Power management modes
+- NVS persistent storage
+- HTTPS API client
+- OTA update infrastructure
+
+## ⚠️ Known Issues
+
+- **Requires hardware** - All features need physical ESP32 + components
+- **Not tested end-to-end** - Individual modules work, integration untested
+- **Display fonts** - Only basic 8x8 font included
+- **Keypad layout** - May need adjustment for physical button placement
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
