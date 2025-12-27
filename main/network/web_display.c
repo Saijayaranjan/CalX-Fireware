@@ -127,14 +127,11 @@ static const char WEB_DISPLAY_HTML[] = R"rawliteral(
         let lastUpdate = Date.now();
         let frames = 0;
         
-        // Note: Keypad input is disabled in view-only mode
-        // function press(key) {
-        //     fetch('/keypress', {
-        //         method: 'POST',
-        //         headers: {'Content-Type': 'application/json'},
-        //         body: JSON.stringify({key: key})
-        //     });
-        // }
+        // Keypad input disabled in view-only mode
+        function press(key) {
+            // No-op: Web display is view-only
+            console.log('Keypad click disabled in view-only mode');
+        }
         
         function updateDisplay() {
             fetch('/display/data')
