@@ -16,9 +16,12 @@
 #include "api_client.h"
 #include "battery_manager.h"
 #include "calx_config.h"
+#include "esp_heap_caps.h"
 #include "logger.h"
 #include "power_manager.h"
 #include "security_manager.h"
+#include "storage_manager.h"
+#include "wifi_manager.h"
 
 static const char *TAG = "API";
 
@@ -184,12 +187,25 @@ bool api_client_send_heartbeat(void) {
   int battery = battery_manager_get_percent();
   calx_power_mode_t mode = power_manager_get_mode();
 
-  char body[128];
-  snprintf(body, sizeof(body),
-           "{\"battery_percent\":%d,\"power_mode\":\"%s\",\"firmware_version\":"
-           "\"%s\"}",
-           battery, mode == POWER_MODE_NORMAL ? "NORMAL" : "LOW",
-           CALX_FW_VERSION);
+  // Get WiFi SSID
+  const char *ssid = wifi_manager_get_ssid();
+
+  // Get free heap (RAM)
+  size_t free_ram = esp_get_free_heap_size();
+
+  // Get free storage (approximate - ESP32 has ~390KB usable partition space)
+  multi_heap_info_t heap_info;
+  heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
+  size_t free_storage = heap_info.total_free_bytes;
+
+  char body[384];
+  snprintf(
+      body, sizeof(body),
+      "{\"battery_percent\":%d,\"power_mode\":\"%s\",\"firmware_version\":\""
+      "%s\",\"wifi_ssid\":\"%s\",\"free_storage\":%u,\"free_ram\":%u}",
+      battery, mode == POWER_MODE_NORMAL ? "NORMAL" : "LOW", CALX_FW_VERSION,
+      ssid ? ssid : "Unknown", (unsigned int)free_storage,
+      (unsigned int)free_ram);
 
   esp_http_client_set_post_field(client, body, strlen(body));
 
@@ -433,9 +449,30 @@ bool api_client_fetch_settings(void) {
   if (err == ESP_OK && status == 200) {
     cJSON *json = cJSON_Parse(response_buffer);
     if (json) {
-      // Parse and apply settings
-      // (Settings are server-controlled, device just acknowledges)
-      LOG_INFO(TAG, "Settings fetched");
+      // Parse screen_timeout and apply immediately
+      cJSON *screen_timeout = cJSON_GetObjectItem(json, "screen_timeout");
+      if (cJSON_IsNumber(screen_timeout)) {
+        int timeout = screen_timeout->valueint;
+        power_manager_set_screen_timeout(timeout);
+        storage_manager_set_screen_timeout(timeout);
+        LOG_INFO(TAG, "Applied screen timeout: %d seconds", timeout);
+      }
+
+      // Parse text_size (for future use in UI)
+      cJSON *text_size = cJSON_GetObjectItem(json, "text_size");
+      if (cJSON_IsString(text_size)) {
+        const char *size = text_size->valuestring;
+        if (strcmp(size, "SMALL") == 0) {
+          storage_manager_set_text_size(TEXT_SIZE_SMALL);
+        } else if (strcmp(size, "LARGE") == 0) {
+          storage_manager_set_text_size(TEXT_SIZE_LARGE);
+        } else {
+          storage_manager_set_text_size(TEXT_SIZE_NORMAL);
+        }
+        LOG_INFO(TAG, "Applied text size: %s", size);
+      }
+
+      LOG_INFO(TAG, "Settings applied successfully");
       success = true;
       cJSON_Delete(json);
     }

@@ -274,17 +274,41 @@ void system_state_process_network(void) {
     }
   }
 
-  // State-specific network operations
-  switch (state) {
-  case STATE_CHAT:
-    // Poll for new messages - handled by UI manager
-    break;
+  // State-specific network operations on entry
+  static calx_state_t last_processed_state = STATE_BOOT;
 
-  case STATE_FILE:
-    // File fetch - handled by UI manager
-    break;
+  if (state != last_processed_state) {
+    // State just entered - fetch data
+    switch (state) {
+    case STATE_CHAT: {
+      // Fetch chat messages
+      chat_message_t messages[10];
+      int count = api_client_fetch_chat(messages, 10, NULL);
+      if (count > 0) {
+        // Display first message (simplified)
+        ui_manager_set_file_content(messages[0].content);
+      }
+      LOG_INFO(TAG, "Fetched %d chat messages", count);
+    } break;
 
-  default:
-    break;
+    case STATE_FILE: {
+      // Fetch file content
+      file_content_t file;
+      if (api_client_fetch_file(&file)) {
+        ui_manager_set_file_content(file.content);
+        LOG_INFO(TAG, "File fetched: %d chars", file.char_count);
+      }
+    } break;
+
+    case STATE_AI: {
+      // AI query would be triggered by calculator input
+      // For now, just log that we're ready
+      LOG_INFO(TAG, "AI mode ready for queries");
+    } break;
+
+    default:
+      break;
+    }
+    last_processed_state = state;
   }
 }

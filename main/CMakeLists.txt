@@ -15,6 +15,7 @@ idf_component_register(
         "storage/storage_manager.c"
         "storage/security_manager.c"
         "network/wifi_manager.c"
+        "network/web_display.c"
         "network/api_client.c"
         "ui/ui_manager.c"
         "ui/text_renderer.c"

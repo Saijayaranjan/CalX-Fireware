@@ -95,4 +95,15 @@ int display_driver_get_char_width(calx_text_size_t size);
  */
 int display_driver_get_line_height(calx_text_size_t size);
 
+/**
+ * Get read-only access to display buffer for web streaming
+ * @return Pointer to display buffer (DISPLAY_BUFFER_SIZE bytes)
+ */
+const uint8_t *display_driver_get_buffer(void);
+
+/**
+ * Get display buffer size in bytes
+ */
+#define DISPLAY_BUFFER_SIZE (DISPLAY_WIDTH * DISPLAY_HEIGHT / 8)
+
 #endif // DISPLAY_DRIVER_H

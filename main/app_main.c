@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "api_client.h"
 #include "battery_manager.h"
 #include "calx_config.h"
 #include "display_driver.h"
@@ -97,15 +98,76 @@ static void input_task(void *pvParameters) {
 // Network Task - Handles API communication
 // =============================================================================
 static void network_task(void *pvParameters) {
-  LOG_INFO(TAG, "Network task started");
-
-  // Wait for WiFi to connect before starting network operations
-  wifi_manager_wait_connected(portMAX_DELAY);
+  TickType_t last_heartbeat = xTaskGetTickCount();
+  TickType_t last_bind_check = 0;
+  TickType_t last_settings_fetch = 0;
+  TickType_t last_ota_check = 0;
+  bool bind_code_requested = false;
+  char bind_code[5] = {0};
 
   while (1) {
-    // Process any pending network operations based on system state
-    system_state_process_network();
-    vTaskDelay(pdMS_TO_TICKS(100));
+    calx_state_t state = system_state_get();
+
+    // Handle not bound state - request bind code once
+    if (state == STATE_NOT_BOUND && !bind_code_requested &&
+        wifi_manager_is_connected()) {
+      int expires_in;
+      if (api_client_request_bind_code(bind_code, &expires_in)) {
+        ui_manager_show_bind_code(bind_code);
+        system_state_set(STATE_BIND);
+        bind_code_requested = true;
+        last_bind_check = xTaskGetTickCount();
+        LOG_INFO(TAG, "Bind code displayed: %s", bind_code);
+      }
+    }
+
+    // Poll bind status every 5 seconds when in bind state
+    if (state == STATE_BIND) {
+      TickType_t now = xTaskGetTickCount();
+      if ((now - last_bind_check) >= pdMS_TO_TICKS(5000)) {
+        char token[128];
+        if (api_client_check_bind_status(token)) {
+          // Device is now bound!
+          security_manager_set_token(token);
+          LOG_INFO(TAG, "Device bound successfully!");
+          system_state_set(STATE_IDLE);
+          bind_code_requested = false; // Reset for next time
+        }
+        last_bind_check = now;
+      }
+    }
+
+    // Send heartbeat every 60 seconds (if bound)
+    if (security_manager_is_bound() && wifi_manager_is_connected()) {
+      TickType_t now = xTaskGetTickCount();
+      if ((now - last_heartbeat) >= pdMS_TO_TICKS(60000)) {
+        api_client_send_heartbeat();
+        last_heartbeat = now;
+      }
+    }
+
+    // Fetch settings every 5 minutes (if bound)
+    if (security_manager_is_bound() && wifi_manager_is_connected()) {
+      TickType_t now = xTaskGetTickCount();
+      if ((now - last_settings_fetch) >= pdMS_TO_TICKS(300000)) {
+        api_client_fetch_settings();
+        last_settings_fetch = now;
+      }
+    }
+
+    // Check for OTA updates daily (if bound)
+    if (security_manager_is_bound() && wifi_manager_is_connected()) {
+      TickType_t now = xTaskGetTickCount();
+      if ((now - last_ota_check) >= pdMS_TO_TICKS(86400000)) {
+        update_info_t info;
+        if (api_client_check_update(&info)) {
+          LOG_INFO(TAG, "OTA update available: %s", info.version);
+        }
+        last_ota_check = now;
+      }
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
@@ -233,6 +295,8 @@ void app_main(void) {
     if (wifi_manager_has_credentials()) {
       LOG_INFO(TAG, "Attempting WiFi connection...");
       wifi_manager_connect();
+      // Start web server for remote access
+      wifi_manager_start_webserver();
       system_state_set(STATE_IDLE);
     } else {
       LOG_INFO(TAG, "No WiFi credentials, starting AP mode");
@@ -240,7 +304,8 @@ void app_main(void) {
       system_state_set(STATE_WIFI_SETUP);
     }
   } else {
-    LOG_INFO(TAG, "Device not bound");
+    LOG_INFO(TAG, "Device not bound, starting AP mode");
+    wifi_manager_start_ap();
     system_state_set(STATE_NOT_BOUND);
   }
 

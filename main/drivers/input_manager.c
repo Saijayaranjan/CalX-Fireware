@@ -173,3 +173,29 @@ bool input_manager_is_key_pressed(calx_key_t key) { return current_key == key; }
 bool input_manager_any_key_pressed(void) { return current_key != KEY_NONE; }
 
 uint32_t input_manager_get_last_key_time(void) { return last_key_time; }
+
+// =============================================================================
+// Virtual Key Injection (for web-based testing)
+// =============================================================================
+
+void input_manager_inject_key(calx_key_t key) {
+  if (key == KEY_NONE)
+    return;
+
+  uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+
+  // Simulate a key press
+  current_key = key;
+  key_press_time = now;
+  last_key_time = now;
+  long_press_sent = false;
+
+  // Post key press event
+  event_manager_post_key(key, false);
+  LOG_INFO(TAG, "Virtual key injected: %d", key);
+
+  // Auto-release after a short delay (simulating physical press)
+  vTaskDelay(pdMS_TO_TICKS(50));
+  previous_key = current_key;
+  current_key = KEY_NONE;
+}

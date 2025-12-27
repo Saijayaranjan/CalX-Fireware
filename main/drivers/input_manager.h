@@ -41,4 +41,10 @@ bool input_manager_any_key_pressed(void);
  */
 uint32_t input_manager_get_last_key_time(void);
 
+/**
+ * Inject a virtual key press (for web-based testing)
+ * @param key Key code to inject
+ */
+void input_manager_inject_key(calx_key_t key);
+
 #endif // INPUT_MANAGER_H

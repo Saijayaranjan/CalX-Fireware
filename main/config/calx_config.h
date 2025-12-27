@@ -21,7 +21,7 @@
 // =============================================================================
 // Backend API Configuration
 // =============================================================================
-#define CALX_API_BASE_URL "https://calx-backend.vercel.app"
+#define CALX_API_BASE_URL "https://calx-api.vercel.app"
 #define CALX_API_TIMEOUT_MS 15000
 #define CALX_API_RETRY_COUNT 3
 #define CALX_API_RETRY_DELAY_MS 1000
@@ -168,6 +168,7 @@ typedef enum { KEYBOARD_QWERTY = 0, KEYBOARD_T9 = 1 } calx_keyboard_t;
 typedef enum {
   STATE_BOOT = 0,
   STATE_NOT_BOUND,
+  STATE_BIND,
   STATE_WIFI_SETUP,
   STATE_IDLE,
   STATE_MENU,

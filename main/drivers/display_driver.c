@@ -424,3 +424,9 @@ int display_driver_get_line_height(calx_text_size_t size) {
     return 8;
   }
 }
+
+// =============================================================================
+// Buffer Access (for web display streaming)
+// =============================================================================
+
+const uint8_t *display_driver_get_buffer(void) { return display_buffer; }

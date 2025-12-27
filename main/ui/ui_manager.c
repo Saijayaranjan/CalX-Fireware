@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "api_client.h"
 #include "battery_manager.h"
 #include "display_driver.h"
 #include "logger.h"
@@ -257,6 +258,9 @@ void ui_manager_update(void) {
   case STATE_NOT_BOUND:
     render_not_bound_screen();
     break;
+  case STATE_BIND:
+    render_bind_screen();
+    break;
   case STATE_IDLE:
     render_idle_screen();
     break;
@@ -398,6 +402,12 @@ void ui_manager_handle_chat_key(calx_key_t key) {
   case KEY_DOWN:
     chat_scroll++;
     needs_redraw = true;
+    break;
+  case KEY_OK:
+    // Send a message - simplified for now
+    // In production, would show input UI first
+    api_client_send_chat("Hello from device!");
+    LOG_INFO("UI", "Chat message sent");
     break;
   case KEY_EQUALS:
     chat_page++;

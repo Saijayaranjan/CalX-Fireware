@@ -19,9 +19,11 @@
 
 #include "calx_config.h"
 #include "event_manager.h"
+#include "input_manager.h"
 #include "logger.h"
 #include "portal_html.h"
 #include "storage_manager.h"
+#include "web_display.h"
 #include "wifi_manager.h"
 
 static const char *TAG = "WIFI";
@@ -211,6 +213,10 @@ static esp_err_t root_handler(httpd_req_t *req) {
 }
 
 static esp_err_t scan_handler(httpd_req_t *req) {
+  // Use static buffers to avoid heap fragmentation issues
+  static wifi_ap_record_t ap_list[10];
+  static char json[2048];
+
   // Perform scan
   wifi_scan_config_t scan_config = {
       .show_hidden = true,
@@ -218,27 +224,12 @@ static esp_err_t scan_handler(httpd_req_t *req) {
   };
   esp_wifi_scan_start(&scan_config, true);
 
-  uint16_t ap_count = 0;
-  esp_wifi_scan_get_ap_num(&ap_count);
-
-  wifi_ap_record_t *ap_list = malloc(ap_count * sizeof(wifi_ap_record_t));
-  if (!ap_list) {
-    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory error");
-    return ESP_FAIL;
-  }
-
+  uint16_t ap_count = 10; // Max 10 networks
   esp_wifi_scan_get_ap_records(&ap_count, ap_list);
 
   // Build JSON response
-  char *json = malloc(2048);
-  if (!json) {
-    free(ap_list);
-    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory error");
-    return ESP_FAIL;
-  }
-
   int pos = sprintf(json, "[");
-  for (int i = 0; i < ap_count && i < WIFI_SCAN_MAX_NETWORKS; i++) {
+  for (int i = 0; i < ap_count && i < 10; i++) {
     if (i > 0)
       pos += sprintf(json + pos, ",");
     pos += sprintf(json + pos, "{\"ssid\":\"%s\",\"rssi\":%d,\"secure\":%s}",
@@ -250,8 +241,6 @@ static esp_err_t scan_handler(httpd_req_t *req) {
   httpd_resp_set_type(req, "application/json");
   httpd_resp_send(req, json, strlen(json));
 
-  free(ap_list);
-  free(json);
   return ESP_OK;
 }
 
@@ -310,6 +299,50 @@ static esp_err_t connect_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
+static esp_err_t keypress_handler(httpd_req_t *req) {
+  char buf[128];
+  int ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
+  if (ret <= 0) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No data");
+    return ESP_FAIL;
+  }
+  buf[ret] = '\0';
+
+  // Parse key from JSON: {"key":7} or {"key":"KEY_7"}
+  int key_code = -1;
+  char *key_start = strstr(buf, "\"key\":");
+  if (key_start) {
+    key_start += 6;
+    while (*key_start == ' ' || *key_start == '\"')
+      key_start++;
+    key_code = atoi(key_start);
+  }
+
+  if (key_code < 0 || key_code > KEY_OK) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid key");
+    return ESP_FAIL;
+  }
+
+  // Inject the key press
+  input_manager_inject_key((calx_key_t)key_code);
+
+  // Send success response
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+  return ESP_OK;
+}
+
+static esp_err_t status_handler(httpd_req_t *req) {
+  char json[256];
+  snprintf(json, sizeof(json),
+           "{\"wifi_connected\":%s,\"ssid\":\"%s\",\"ip\":\"%s\"}",
+           is_connected ? "true" : "false", current_ssid, current_ip);
+
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  return httpd_resp_send(req, json, strlen(json));
+}
+
 void wifi_manager_start_ap(void) {
   is_ap_mode = true;
 
@@ -326,7 +359,8 @@ void wifi_manager_start_ap(void) {
           },
   };
 
-  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+  // Use APSTA mode to allow scanning while AP is active
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
   ESP_ERROR_CHECK(esp_wifi_start());
 
@@ -366,9 +400,41 @@ void wifi_manager_start_ap(void) {
         .handler = connect_handler,
     };
     httpd_register_uri_handler(http_server, &connect);
+
+    // Keypress endpoint (virtual keypad)
+    httpd_uri_t keypress = {
+        .uri = "/keypress",
+        .method = HTTP_POST,
+        .handler = keypress_handler,
+    };
+    httpd_register_uri_handler(http_server, &keypress);
+
+    // Display endpoints
+    httpd_uri_t display = {
+        .uri = "/display",
+        .method = HTTP_GET,
+        .handler = web_display_handler,
+    };
+    httpd_register_uri_handler(http_server, &display);
+
+    httpd_uri_t display_data = {
+        .uri = "/display/data",
+        .method = HTTP_GET,
+        .handler = web_display_data_handler,
+    };
+    httpd_register_uri_handler(http_server, &display_data);
+
+    // Status endpoint
+    httpd_uri_t status = {
+        .uri = "/status",
+        .method = HTTP_GET,
+        .handler = status_handler,
+    };
+    httpd_register_uri_handler(http_server, &status);
   }
 
   LOG_INFO(TAG, "AP started: %s", WIFI_AP_SSID);
+  web_display_init();
 }
 
 void wifi_manager_stop_ap(void) {
@@ -432,4 +498,37 @@ int8_t wifi_manager_get_rssi(void) {
     }
   }
   return current_rssi;
+}
+
+void wifi_manager_start_webserver(void) {
+  if (http_server != NULL) {
+    LOG_INFO(TAG, "HTTP server already running");
+    return;
+  }
+
+  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  config.uri_match_fn = httpd_uri_match_wildcard;
+
+  if (httpd_start(&http_server, &config) == ESP_OK) {
+    // Web display endpoint
+    httpd_uri_t display = {
+        .uri = "/display",
+        .method = HTTP_GET,
+        .handler = web_display_handler,
+    };
+    httpd_register_uri_handler(http_server, &display);
+
+    // Web display data endpoint
+    httpd_uri_t display_data = {
+        .uri = "/display/data",
+        .method = HTTP_GET,
+        .handler = web_display_data_handler,
+    };
+    httpd_register_uri_handler(http_server, &display_data);
+
+    LOG_INFO(TAG, "Web server started on port 80");
+    web_display_init();
+  } else {
+    LOG_ERROR(TAG, "Failed to start web server");
+  }
 }

@@ -411,7 +411,8 @@ static const char PORTAL_HTML[] = R"rawliteral(
                     <polyline points="9 12 12 15 16 10"></polyline>
                 </svg>
                 <p class="status-title">Connected!</p>
-                <p class="status-message">CalX is now connected to your network. You can close this page.</p>
+                <p class="status-message">CalX is connected. Connect your phone to the same WiFi network, then access:</p>
+                <p id="newIpAddress" style="color: var(--primary); font-weight: 600; margin-top: 8px; font-size: 1.1rem;"></p>
             </div>
         </div>
 
@@ -461,15 +462,12 @@ static const char PORTAL_HTML[] = R"rawliteral(
             list.innerHTML = '';
             
             networks.forEach(net => {
-                const signalStrength = getSignalBars(net.rssi);
                 const div = document.createElement('div');
                 div.className = 'network-item';
                 div.onclick = () => selectNetwork(net.ssid, net.secure);
                 div.innerHTML = `
-                    <div class="network-signal">
-                        ${signalStrength}
-                    </div>
                     <span class="network-ssid">${escapeHtml(net.ssid)}</span>
+                    <span style="color: var(--muted-foreground); font-size: 0.85rem; margin-left: auto;">${net.rssi} dBm</span>
                     ${net.secure ? '<svg class="network-lock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : ''}
                 `;
                 list.appendChild(div);
@@ -479,8 +477,8 @@ static const char PORTAL_HTML[] = R"rawliteral(
         function getSignalBars(rssi) {
             const strength = rssi > -50 ? 4 : rssi > -60 ? 3 : rssi > -70 ? 2 : 1;
             let bars = '';
-            for (let i = 1; i <= 4; i++) {
-                const height = 4 + (i * 3);
+            for (let i = 4; i >= 1; i--) {
+                const height = 4 + ((5 - i) * 3);  // Inverted: i=4 gives shortest, i=1 gives tallest
                 const active = i <= strength ? 'active' : '';
                 bars += `<div class="signal-bar ${active}" style="height: ${height}px;"></div>`;
             }
@@ -531,9 +529,22 @@ static const char PORTAL_HTML[] = R"rawliteral(
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'connecting') {
-                    // Wait a bit then check status
+                    // Wait then check status to get new IP
                     setTimeout(() => {
-                        showState('success');
+                        fetch('/status')
+                            .then(res => res.json())
+                            .then(status => {
+                                if (status.wifi_connected && status.ip) {
+                                    document.getElementById('newIpAddress').textContent = `http://${status.ip}/display`;
+                                } else {
+                                    document.getElementById('newIpAddress').textContent = 'Check your router for device IP';
+                                }
+                                showState('success');
+                            })
+                            .catch(() => {
+                                document.getElementById('newIpAddress').textContent = 'Check your router for device IP';
+                                showState('success');
+                            });
                     }, 5000);
                 }
             })

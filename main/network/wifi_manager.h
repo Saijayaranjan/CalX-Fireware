@@ -90,4 +90,9 @@ const char *wifi_manager_get_ssid(void);
  */
 int8_t wifi_manager_get_rssi(void);
 
+/**
+ * Start HTTP server for web display (station mode)
+ */
+void wifi_manager_start_webserver(void);
+
 #endif // WIFI_MANAGER_H
