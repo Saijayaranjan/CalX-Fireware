@@ -2,13 +2,14 @@
 
 <div align="center">
 
-![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.2.2-blue?logo=espressif)
-![ESP32](https://img.shields.io/badge/ESP32-WROOM--32-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+[![Website](https://img.shields.io/badge/Website-calxio.vercel.app-blue?style=for-the-badge)](https://calxio.vercel.app/)
+[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.2.2-blue?logo=espressif)](https://github.com/espressif/esp-idf)
+[![ESP32](https://img.shields.io/badge/ESP32-WROOM--32-green)](https://www.espressif.com/en/products/socs/esp32)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 **A smart calculator companion device with cloud connectivity, AI integration, and OTA updates.**
 
-[Features](#features) • [Hardware](#hardware-requirements) • [Setup](#setup) • [Build](#build--flash) • [Architecture](#project-structure)
+🌐 **[CalX Website](https://calxio.vercel.app/)** • [Features](#features) • [Hardware](#hardware-bom) • [Setup](#setup) • [Build](#build--flash)
 
 ![CalX Dashboard](https://github.com/Saijayaranjan/CalX-Frontend/blob/main/public/images/Website.png?raw=true)
 
@@ -27,17 +28,72 @@
 - 🔋 **Battery Management** - ADC-based monitoring with low power modes
 - 📺 **OLED Display** - 128x32 SSD1306 with multiple text sizes
 
-## Hardware Requirements
+---
 
-### Components
+## Hardware BOM
+
+Complete Bill of Materials to build your own CalX device.
+
+### 1. Core Compute (Mandatory)
 
 | Component | Specification |
 |-----------|---------------|
-| Microcontroller | ESP32-WROOM-32 DevKit |
-| Display | SSD1306 OLED 128x32 (I2C) |
-| Input | 6x5 Matrix Keypad |
-| Power | 3.7V LiPo Battery + Voltage Divider |
-| Storage | 4MB Flash (built-in) |
+| **Microcontroller** | ESP32-WROOM-32 Dev Board (38-pin) |
+| | Dual-core 240 MHz, WiFi 2.4 GHz + Bluetooth |
+| | USB-to-UART onboard, 4 MB flash |
+
+### 2. Display (Mandatory)
+
+| Component | Specification |
+|-----------|---------------|
+| **OLED Display** | 0.91" 128×32 SSD1306 (I2C) |
+| | White or Blue, 3.3–5V |
+
+### 3. Input System (Mandatory)
+
+| Component | Specification |
+|-----------|---------------|
+| **Tactile Buttons** | 10× SMD or THT tactile switches |
+| | Navigation (↑ ↓ ← →), OK, Back, Menu, Shift, Power |
+
+### 4. Power System (Mandatory)
+
+| Component | Specification |
+|-----------|---------------|
+| **Battery** | 3.7V Li-Po, 450–500 mAh (502030/WLY52535) |
+| **Charger** | TP4056 Li-ion Charger (USB-C preferred) |
+| **Regulator** | AMS1117-3.3V or ESP32 onboard |
+| **Power Switch** | Slide switch (SPDT/SPST) |
+
+### 5. Battery Safety (Mandatory)
+
+| Component | Specification |
+|-----------|---------------|
+| **Voltage Divider** | 100kΩ + 100kΩ resistors |
+| **Polyfuse** | 1206L050 (500 mA) |
+
+### 6. Passive Components (Mandatory)
+
+| Component | Specification |
+|-----------|---------------|
+| **Resistors** | 10kΩ (pull-ups), 100kΩ (battery sensing) |
+| **Capacitors** | 0.1µF ceramic, 10µF electrolytic |
+
+### 7. Wiring & Connectors
+
+| Component | Specification |
+|-----------|---------------|
+| **Wires** | 24–28 AWG, PVC or silicone |
+| **Connectors** | DuPont 2.54mm, JST-PH 2-pin (battery) |
+| **Jumper Wires** | M-M, M-F, F-F for prototyping |
+
+### 8. Optional Components
+
+| Component | Purpose |
+|-----------|---------|
+| LEDs (3mm R/G/Y) | Status indicators |
+| Micro-SD module | Extended storage |
+| RTC module | Offline timekeeping |
 
 ### GPIO Pinout
 
@@ -57,6 +113,8 @@
 │    Cols ─────── GPIO 26,27,32,33,14 │
 └─────────────────────────────────────┘
 ```
+
+---
 
 ## Setup
 
@@ -119,7 +177,6 @@ idf.py -p /dev/cu.usbserial-XXXX flash monitor
 
 ### Build Output
 
-After successful build:
 ```
 build/
 ├── calx_firmware.bin          # Main firmware (~1 MB)
@@ -128,100 +185,25 @@ build/
 └── ota_data_initial.bin       # OTA tracking data
 ```
 
+---
+
 ## Project Structure
 
 ```
 CalX-Fireware/
 ├── main/
-│   ├── app_main.c              # Entry point, task creation
-│   ├── config/
-│   │   └── calx_config.h       # All configuration constants
-│   ├── core/
-│   │   ├── system_state.c/h    # State machine
-│   │   ├── event_manager.c/h   # Event queue system
-│   │   ├── logger.c/h          # Logging with levels
-│   │   └── time_manager.c/h    # NTP time sync
-│   ├── drivers/
-│   │   ├── display_driver.c/h  # SSD1306 OLED driver
-│   │   ├── input_manager.c/h   # Keypad scanner
-│   │   ├── battery_manager.c/h # ADC battery monitoring
-│   │   └── power_manager.c/h   # Power modes
-│   ├── storage/
-│   │   ├── storage_manager.c/h # NVS persistence
-│   │   └── security_manager.c/h# Device ID & tokens
-│   ├── network/
-│   │   ├── wifi_manager.c/h    # WiFi STA/AP modes
-│   │   └── api_client.c/h      # HTTPS API client
-│   ├── ui/
-│   │   ├── ui_manager.c/h      # Screen rendering
-│   │   └── text_renderer.c/h   # Text wrapping/pagination
-│   ├── ota/
-│   │   └── ota_manager.c/h     # OTA update handling
-│   └── captive_portal/
-│       └── portal_html.h       # WiFi setup webpage
-├── CMakeLists.txt              # Project CMake config
-├── partitions.csv              # Flash partition table
-└── sdkconfig.defaults          # Default SDK configuration
+│   ├── app_main.c              # Entry point
+│   ├── config/calx_config.h    # Configuration
+│   ├── core/                   # State machine, events, logging
+│   ├── drivers/                # OLED, keypad, battery, power
+│   ├── storage/                # NVS, security
+│   ├── network/                # WiFi, API client
+│   ├── ui/                     # Display rendering
+│   └── ota/                    # Firmware updates
+├── CMakeLists.txt
+├── partitions.csv
+└── sdkconfig.defaults
 ```
-
-## Configuration
-
-All settings are in `main/config/calx_config.h`:
-
-### Backend API
-```c
-#define CALX_API_BASE_URL    "https://calx-backend.vercel.app"
-#define CALX_API_TIMEOUT_MS  15000
-```
-
-### Character Limits (matches backend)
-```c
-#define CHAT_MAX_CHARS       2500
-#define AI_INPUT_MAX_CHARS   2500
-#define FILE_MAX_CHARS       4000
-```
-
-### Hardware Pins
-```c
-#define DISPLAY_I2C_SDA_PIN  21
-#define DISPLAY_I2C_SCL_PIN  22
-#define BATTERY_ADC_CHANNEL  ADC_CHANNEL_6  // GPIO34
-```
-
-## Device States
-
-```
-┌───────────┐    ┌────────────┐    ┌──────────────┐
-│   BOOT    │───▶│ NOT_BOUND  │───▶│ WIFI_SETUP   │
-└───────────┘    └────────────┘    └──────────────┘
-                                          │
-                 ┌────────────────────────┘
-                 ▼
-            ┌─────────┐
-            │  IDLE   │◀──────────────────┐
-            └────┬────┘                   │
-                 │                        │
-            ┌────▼────┐                   │
-            │  MENU   │───┬───┬───┬───────┤
-            └─────────┘   │   │   │       │
-                          ▼   ▼   ▼       │
-                       CHAT FILE AI  SETTINGS
-```
-
-## API Endpoints
-
-The firmware communicates with these backend endpoints:
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/device/bind/request` | POST | Get bind code |
-| `/device/bind/status` | GET | Check binding status |
-| `/device/heartbeat` | POST | Send device status |
-| `/device/chat` | GET | Fetch messages |
-| `/device/chat/send` | POST | Send message |
-| `/device/file` | GET | Get synced file |
-| `/device/ai/query` | POST | Send AI prompt |
-| `/device/update/check` | GET | Check for OTA |
 
 ## First Boot Flow
 
@@ -231,32 +213,8 @@ The firmware communicates with these backend endpoints:
 4. **Connect Phone** → Join the AP, captive portal opens
 5. **Select Network** → Choose WiFi and enter password
 6. **Binding** → 6-digit code appears on screen
-7. **Dashboard** → Enter code in CalX Dashboard to bind
+7. **Dashboard** → Enter code at [calxio.vercel.app](https://calxio.vercel.app/)
 8. **Ready** → Device shows idle screen with time
-
-## Troubleshooting
-
-### Build Errors
-```bash
-# Clean and rebuild
-idf.py fullclean
-idf.py build
-```
-
-### Flash Issues
-```bash
-# Hold BOOT button while flashing
-idf.py -p PORT flash
-
-# Erase flash completely
-idf.py -p PORT erase-flash
-```
-
-### Monitor Issues
-```bash
-# Change baud rate if garbled output
-idf.py -p PORT -b 115200 monitor
-```
 
 ## License
 
@@ -268,6 +226,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Part of the CalX Ecosystem**
 
-[CalX Backend](https://github.com/Saijayaranjan/calx-backend) • [CalX Frontend](https://github.com/Saijayaranjan/CalX-Frontend)
+🌐 [CalX Website](https://calxio.vercel.app/) • [Backend](https://github.com/Saijayaranjan/calx-backend) • [Frontend](https://github.com/Saijayaranjan/CalX-Frontend)
 
 </div>
