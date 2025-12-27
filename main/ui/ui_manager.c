@@ -175,12 +175,13 @@ static void render_ai_screen(void) {
 static void render_settings_screen(void) {
   display_driver_clear();
 
-  const char *items[] = {"1.Internet", "2.AI Config", "3.Advanced",
-                         "4.Update",   "5.Bind",      "6.Keyboard"};
+  const char *items[] = {"1.Internet", "2.AI Config", "3.Keyboard",
+                         "4.Display",  "5.Power",     "6.Device",
+                         "7.Update",   "8.Advanced"};
 
   // Show 4 items at a time
   int start = (settings_selection / 4) * 4;
-  for (int i = 0; i < 4 && (start + i) < 6; i++) {
+  for (int i = 0; i < 4 && (start + i) < 8; i++) {
     int y = i * 8;
     display_driver_draw_text(0, y, items[start + i], TEXT_SIZE_SMALL);
 

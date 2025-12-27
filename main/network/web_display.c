@@ -91,35 +91,35 @@ static const char WEB_DISPLAY_HTML[] = R"rawliteral(
     <div id="fps">FPS: 0</div>
     
     <div class="keypad">
-        <button class="key" onclick="press(17)">↑</button>
-        <button class="key" onclick="press(18)">↓</button>
-        <button class="key" onclick="press(19)">←</button>
-        <button class="key" onclick="press(20)">→</button>
-        <button class="key" onclick="press(21)">OK</button>
+        <button class="key" onclick="press(19)">↑</button>
+        <button class="key" onclick="press(20)">↓</button>
+        <button class="key" onclick="press(21)">←</button>
+        <button class="key" onclick="press(22)">→</button>
+        <button class="key" onclick="press(23)">OK</button>
         
-        <button class="key" onclick="press(1)">1</button>
-        <button class="key" onclick="press(2)">2</button>
-        <button class="key" onclick="press(3)">3</button>
+        <button class="key" onclick="press(2)">1</button>
+        <button class="key" onclick="press(3)">2</button>
+        <button class="key" onclick="press(4)">3</button>
         <button class="key" onclick="press(11)">+</button>
         <button class="key" onclick="press(12)">−</button>
         
-        <button class="key" onclick="press(4)">4</button>
-        <button class="key" onclick="press(5)">5</button>
-        <button class="key" onclick="press(6)">6</button>
+        <button class="key" onclick="press(5)">4</button>
+        <button class="key" onclick="press(6)">5</button>
+        <button class="key" onclick="press(7)">6</button>
         <button class="key" onclick="press(13)">×</button>
         <button class="key" onclick="press(14)">÷</button>
         
-        <button class="key" onclick="press(7)">7</button>
-        <button class="key" onclick="press(8)">8</button>
-        <button class="key" onclick="press(9)">9</button>
+        <button class="key" onclick="press(8)">7</button>
+        <button class="key" onclick="press(9)">8</button>
+        <button class="key" onclick="press(10)">9</button>
         <button class="key" onclick="press(15)">=</button>
         <button class="key" onclick="press(16)">DEL</button>
         
-        <button class="key" onclick="press(10)">0</button>
-        <button class="key" onclick="press(22)">.</button>
-        <button class="key" onclick="press(23)">(</button>
-        <button class="key" onclick="press(24)">)</button>
-        <button class="key" onclick="press(25)">AC</button>
+        <button class="key" onclick="press(1)">0</button>
+        <button class="key" onclick="press(18)">.</button>
+        <button class="key" onclick="press(24)">(</button>
+        <button class="key" onclick="press(25)">)</button>
+        <button class="key" onclick="press(17)">AC</button>
     </div>
     
     <script>
